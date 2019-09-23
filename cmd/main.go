@@ -11,12 +11,12 @@ import (
 	"os"
 	"time"
 
-	"github.com/neoseele/tiddles/dns"
-	g "github.com/neoseele/tiddles/grpc"
-	"github.com/neoseele/tiddles/dump"
-	"github.com/neoseele/tiddles/db"
-	"github.com/neoseele/tiddles/probe"
-	"github.com/neoseele/tiddles/stress"
+	"github.com/neoseele/tiddles/pkg/db"
+	"github.com/neoseele/tiddles/pkg/dns"
+	"github.com/neoseele/tiddles/pkg/dump"
+	g "github.com/neoseele/tiddles/pkg/grpc"
+	"github.com/neoseele/tiddles/pkg/probe"
+	"github.com/neoseele/tiddles/pkg/stress"
 
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
@@ -168,7 +168,6 @@ func initStackdriverTracing() {
 
 // main function to boot up everything
 func main() {
-	go initStackdriverTracing()
 
 	// set backend if the flag is set
 	backend := flag.String("backend", "", "Specify a backend url to ping [localhost:80] (default: none)")
@@ -179,12 +178,18 @@ func main() {
 	key := flag.String("key", "", "Specify a TLS key file (default: none)")
 	grpcBeAddr := flag.String("grpc-backend", "", "Specify a grpc backend address [localhost:50000] (default: none)")
 	clientOnly := flag.Bool("client-only", false, "Run as client (default: false")
+	trace := flag.Bool("trace", false, "Enable Stackdriver Tracing (default: false)")
 	flag.Parse()
 
-	// run client
+	// run as client
 	if *clientOnly {
 		g.PingBackend(context.Background(), *grpcBeAddr, *cert)
 		os.Exit(0)
+	}
+
+	// enable Stackdriver Tracing
+	if *trace {
+		go initStackdriverTracing()
 	}
 
 	// set mongodb connection string if specified via env
@@ -236,8 +241,8 @@ func main() {
 	}).Methods("GET")
 
 	// dump
-	router.HandleFunc("/dump/", kubedump.GetAll).Methods("GET")
-	router.HandleFunc("/dump/{name}", kubedump.GetObj).Methods("GET")
+	router.HandleFunc("/dump/", dump.GetAll).Methods("GET")
+	router.HandleFunc("/dump/{name}", dump.GetObj).Methods("GET")
 
 	// log.Fatal(http.ListenAndServe(":"+port, router))
 	errs := runServer(router, *httpPort, *httpsPort, *grpcPort, *cert, *key)

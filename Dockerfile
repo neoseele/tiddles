@@ -12,17 +12,17 @@ RUN go mod download
 COPY . .
 
 # Build the binary
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -installsuffix cgo -o /go/bin/tiddles
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -installsuffix cgo -o /go/bin/tiddles ./cmd/main.go
 
 # Create default tls cert/key pair
 RUN openssl req -x509 -newkey rsa:2048 \
   -subj "/C=US/ST=California/L=San Francisco/O=CPS/CN=localhost" \
   -keyout tls.key -out tls.crt -days 3650 -nodes -sha256
 
-FROM alpine:3.9
+FROM alpine:edge
 RUN apk --no-cache add curl
 COPY --from=builder /go/bin/tiddles /tiddles
 COPY --from=builder /tiddles/tls.crt /tls/tls.crt
 COPY --from=builder /tiddles/tls.key /tls/tls.key
 VOLUME /data
-ENTRYPOINT ["/tiddles"]
+CMD ["/tiddles"]

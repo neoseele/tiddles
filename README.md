@@ -1,4 +1,6 @@
-# App: Tiddles
+# Tiddles
+
+A ship'cat wonders around, and catching mices, or bugs. :)
 
 ## Build the image
 
@@ -17,13 +19,13 @@
 ## Run the app locally
 
 ```sh
-docker run --rm -d -p 8000:8000 -p 10443:10443 --name my-tiddles tiddles:local
+docker run --rm -d -p 127.0.0.1:80:80 -p 127.0.0.1:443:443 --name debug tiddles:local
 ```
 
 ## Clean up
 
 ```sh
-docker stop my-tiddles && docker rm my-tiddles
+docker stop debug
 docker rmi tiddles:local
 ```
 
@@ -35,6 +37,8 @@ docker rmi tiddles:local
 * `GET /liveness`
 * `GET /readiness`
 * `GET /ping`
+* `GET /ping-backend`
+* `GET /ping-backend-with-db`
 
 * `/stress`
   * `GET /stress/cpu`

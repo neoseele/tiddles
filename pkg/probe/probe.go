@@ -6,7 +6,7 @@ import (
 	"log"
 	"net/http"
 
-	g "github.com/neoseele/tiddles/grpc"
+	g "github.com/neoseele/tiddles/pkg/grpc"
 
 	"contrib.go.opencensus.io/exporter/stackdriver/propagation"
 	"go.opencensus.io/plugin/ochttp"
