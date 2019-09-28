@@ -77,18 +77,22 @@ func (s *HealthServer) Watch(in *healthpb.HealthCheckRequest, srv healthpb.Healt
 }
 
 // PingBackend probes the specificed grpc server
-func PingBackend(ctx context.Context, grpcBeAddr string, cert string) *[]string {
+func PingBackend(ctx context.Context, addr string, cert string) *[]string {
 	// Set up a connection to the server.
 	var conn *grpc.ClientConn
 	var err error
 	if cert == "" {
-		conn, err = grpc.Dial(grpcBeAddr, grpc.WithInsecure(), grpc.WithStatsHandler(&ocgrpc.ClientHandler{}))
+		conn, err = grpc.DialContext(ctx, addr,
+			grpc.WithInsecure(),
+			grpc.WithStatsHandler(&ocgrpc.ClientHandler{}))
 	} else {
 		tc, err := credentials.NewClientTLSFromFile(cert, "")
 		if err != nil {
 			log.Fatalf("Failed to generate credentials %v", err)
 		}
-		conn, err = grpc.Dial(grpcBeAddr, grpc.WithTransportCredentials(tc), grpc.WithStatsHandler(&ocgrpc.ClientHandler{}))
+		conn, err = grpc.DialContext(ctx, addr,
+			grpc.WithTransportCredentials(tc),
+			grpc.WithStatsHandler(&ocgrpc.ClientHandler{}))
 	}
 	if err != nil {
 		log.Fatalf("did not connect: %v", err)

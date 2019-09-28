@@ -178,7 +178,7 @@ func main() {
 	key := flag.String("key", "", "Specify a TLS key file (default: none)")
 	grpcBeAddr := flag.String("grpc-backend", "", "Specify a grpc backend address [localhost:50000] (default: none)")
 	clientOnly := flag.Bool("client-only", false, "Run as client (default: false")
-	trace := flag.Bool("trace", false, "Enable Stackdriver Tracing (default: false)")
+	doTrace := flag.Bool("trace", false, "Enable Stackdriver Tracing (default: false)")
 	flag.Parse()
 
 	// run as client
@@ -188,7 +188,7 @@ func main() {
 	}
 
 	// enable Stackdriver Tracing
-	if *trace {
+	if *doTrace {
 		go initStackdriverTracing()
 	}
 
