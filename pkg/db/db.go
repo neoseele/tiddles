@@ -24,7 +24,7 @@ type Address struct {
 	State string `json:"state,omitempty" bson:"state"`
 }
 
-var people []Person
+var db []Person
 var mongoSession *mgo.Session
 
 // Init ...
@@ -32,14 +32,14 @@ func Init(session *mgo.Session) {
 	if session != nil {
 		mongoSession = session
 	} else {
-		people = append(people, Person{ID: "1", Firstname: "John", Lastname: "Doe", Address: &Address{City: "City X", State: "State X"}})
-		// people = append(people, Person{ID: "2", Firstname: "Koko", Lastname: "Doe", Address: &Address{City: "City Z", State: "State Y"}})
+		db = append(db, Person{ID: "1", Firstname: "John", Lastname: "Doe", Address: &Address{City: "City X", State: "State X"}})
+		// db = append(db, Person{ID: "2", Firstname: "Koko", Lastname: "Doe", Address: &Address{City: "City Z", State: "State Y"}})
 	}
 }
 
 func getCollection() (*mgo.Collection, *mgo.Session) {
 	s := mongoSession.Copy()
-	c := s.DB("test").C("people")
+	c := s.DB("test").C("db")
 
 	return c, s
 }
@@ -63,7 +63,7 @@ func GetAll(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(result)
 
 	} else {
-		json.NewEncoder(w).Encode(people)
+		json.NewEncoder(w).Encode(db)
 	}
 }
 
@@ -86,8 +86,8 @@ func Get(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(p)
 
 	} else {
-		// find the person from the people slice
-		for _, p := range people {
+		// find the person from the db slice
+		for _, p := range db {
 			if p.ID == params["id"] {
 				json.NewEncoder(w).Encode(p)
 				return
@@ -97,7 +97,7 @@ func Get(w http.ResponseWriter, r *http.Request) {
 }
 
 // Create a person object
-// example: curl -d '{"id":"100", "firstname":"foo", "lastname":"bar"}' -H "Content-Type: application/json" -X POST http://backend:8000/people/100
+// example: curl -d '{"id":"100", "firstname":"foo", "lastname":"bar"}' -H "Content-Type: application/json" -X POST http://backend:8000/db/100
 func Create(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	var p Person
@@ -116,14 +116,14 @@ func Create(w http.ResponseWriter, r *http.Request) {
 
 		GetAll(w, r)
 	} else {
-		people = append(people, p)
+		db = append(db, p)
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(people)
+		json.NewEncoder(w).Encode(db)
 	}
 }
 
 // Delete a person object
-// example: curl -X DELETE http://backend:8000/people/100
+// example: curl -X DELETE http://backend:8000/db/100
 func Delete(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 
@@ -140,18 +140,18 @@ func Delete(w http.ResponseWriter, r *http.Request) {
 		GetAll(w, r)
 	} else {
 		w.Header().Set("Content-Type", "application/json")
-		for i, p := range people {
+		for i, p := range db {
 			if p.ID == params["id"] {
-				people = append(people[:i], people[i+1:]...)
+				db = append(db[:i], db[i+1:]...)
 				break
 			}
-			json.NewEncoder(w).Encode(people)
+			json.NewEncoder(w).Encode(db)
 		}
 	}
 }
 
 // Update a person object
-// example: curl -d '{"lastname":"brad"}' -X PUT http://backend:8000/people/100
+// example: curl -d '{"lastname":"brad"}' -X PUT http://backend:8000/db/100
 func Update(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	var p Person
@@ -171,22 +171,22 @@ func Update(w http.ResponseWriter, r *http.Request) {
 		GetAll(w, r)
 	} else {
 		// remove the matched person from the slice
-		for i, p := range people {
+		for i, p := range db {
 			if p.ID == params["id"] {
 				// this approach is supposed to be memory leak free when
 				// the element of the slice is a pointer or a struct with pointer fields.
 				// since the slice here is non of that, we don't have to use this, but
 				// I am leaving this bit of code here just for reference.
 				// (https://github.com/golang/go/wiki/SliceTricks)
-				copy(people[i:], people[i+1:])
-				people[len(people)-1] = Person{}
-				people = people[:len(people)-1]
+				copy(db[i:], db[i+1:])
+				db[len(db)-1] = Person{}
+				db = db[:len(db)-1]
 				break
 			}
 		}
 		// add the updated person back into the slice
-		people = append(people, p)
+		db = append(db, p)
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(people)
+		json.NewEncoder(w).Encode(db)
 	}
 }

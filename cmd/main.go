@@ -213,11 +213,11 @@ func main() {
 	} else {
 		db.Init(nil)
 	}
-	router.HandleFunc("/people", db.GetAll).Methods("GET")
-	router.HandleFunc("/people/{id:[0-9]+}", db.Get).Methods("GET")
-	router.HandleFunc("/people/{id:[0-9]+}", db.Create).Methods("POST")
-	router.HandleFunc("/people/{id:[0-9]+}", db.Update).Methods("PUT")
-	router.HandleFunc("/people/{id:[0-9]+}", db.Delete).Methods("DELETE")
+	router.HandleFunc("/db", db.GetAll).Methods("GET")
+	router.HandleFunc("/db/{id:[0-9]+}", db.Get).Methods("GET")
+	router.HandleFunc("/db/{id:[0-9]+}", db.Create).Methods("POST")
+	router.HandleFunc("/db/{id:[0-9]+}", db.Update).Methods("PUT")
+	router.HandleFunc("/db/{id:[0-9]+}", db.Delete).Methods("DELETE")
 
 	// stress
 	router.HandleFunc("/stress/{type}", stress.Run).Methods("GET")
@@ -233,7 +233,7 @@ func main() {
 		probe.PingBackend(w, r, *backend)
 	}).Methods("GET")
 	router.HandleFunc("/ping-backend-with-db", func(w http.ResponseWriter, r *http.Request) {
-		probe.PingBackend(w, r, *backend+"/people")
+		probe.PingBackend(w, r, *backend+"/db")
 		probe.PingGRPCBackend(w, r, *grpcBeAddr, *cert)
 	}).Methods("GET")
 	router.HandleFunc("/ping-grpc-backend", func(w http.ResponseWriter, r *http.Request) {

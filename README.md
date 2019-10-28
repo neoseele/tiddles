@@ -1,6 +1,6 @@
 # Tiddles
 
-A ship'cat wonders around, and catching mices, or bugs. :)
+A ship'cat wonders around catching mices, or bugs. :)
 
 ## Build the image
 
@@ -52,12 +52,12 @@ docker rmi tiddles:local
   * `GET /dns/weight?=1000`
   > weight: number of concurrent dns queries in each web request
 
-* `/people`
-  * `GET /people`
-  * `GET /people/{id}`
-  * `POST /people/{id}`
-  * `PUT /people/{id}`
-  * `DELETE /people/{id}`
+* `/db`
+  * `GET /db`
+  * `GET /db/{id}`
+  * `POST /db/{id}`
+  * `PUT /db/{id}`
+  * `DELETE /db/{id}`
   > sample rest API
 
 * `/dump`
