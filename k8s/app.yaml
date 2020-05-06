@@ -1,11 +1,12 @@
 ---
-kind: Service
 apiVersion: v1
+kind: Service
 metadata:
-  name: tiddles
+  name: tiddles-frontend
 spec:
   selector:
     app: tiddles
+    tier: frontend
   ports:
   - name: http
     protocol: TCP
@@ -15,6 +16,10 @@ spec:
     protocol: TCP
     port: 443
     targetPort: 443
+  - name: http-oczpages
+    protocol: TCP
+    port: 8888
+    targetPort: 8888
   - name: grpc
     protocol: TCP
     port: 50000
@@ -23,21 +28,24 @@ spec:
   externalTrafficPolicy: Local # or Cluster
 
 ---
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: tiddles-dep
+  name: tiddles-frontend
   labels:
-    deployment: tiddles
+    app: tiddles
+    tier: frontend
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: tiddles
+      tier: frontend
   template:
     metadata:
       labels:
         app: tiddles
+        tier: frontend
     spec:
       containers:
       # [START app_container]
@@ -45,11 +53,12 @@ spec:
         image: gcr.io/nmiu-play/tiddles
         imagePullPolicy: Always
         args:
-          - -cert=/tls/tls.crt
-          - -key=/tls/tls.key
-        env:
-        - name: MONGODB_URL
-          value: mongodb
+          - /tiddles
+          - --cert=/tls/tls.crt
+          - --key=/tls/tls.key
+          - --trace
+          - --backend=tiddles-backend:80
+          - --grpc-backend=tiddles-backend:50000
         resources:
           requests:
             cpu: 100m
@@ -63,6 +72,9 @@ spec:
           protocol: TCP
         - name: https
           containerPort: 443
+          protocol: TCP
+        - name: http-oczpages
+          containerPort: 8888
           protocol: TCP
         - name: grpc
           containerPort: 50000
@@ -85,7 +97,108 @@ spec:
           timeoutSeconds: 5
           successThreshold: 1
           failureThreshold: 5
+      # [END app_container]
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tiddles-backend
+spec:
+  selector:
+    app: tiddles
+    tier: backend
+  ports:
+  - name: http
+    protocol: TCP
+    port: 80
+    targetPort: 80
+  - name: https
+    protocol: TCP
+    port: 443
+    targetPort: 443
+  - name: http-oczpages
+    protocol: TCP
+    port: 8888
+    targetPort: 8888
+  - name: grpc
+    protocol: TCP
+    port: 50000
+    targetPort: 50000
+  type: ClusterIP
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tiddles-backend
+  labels:
+    app: tiddles
+    tier: backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tiddles
+      tier: backend
+  template:
+    metadata:
+      labels:
+        app: tiddles
+        tier: backend
+    spec:
+      containers:
       # [START app_container]
+      - name: tiddles
+        image: gcr.io/nmiu-play/tiddles
+        imagePullPolicy: Always
+        args:
+          - /tiddles
+          - --cert=/tls/tls.crt
+          - --key=/tls/tls.key
+          - --trace
+        env:
+        - name: MONGODB_URL
+          value: mongodb
+        resources:
+          requests:
+            cpu: 100m
+            memory: 100Mi
+          limits:
+            cpu: 300m
+            memory: 300Mi
+        ports:
+        - name: http
+          containerPort: 80
+          protocol: TCP
+        - name: https
+          containerPort: 443
+          protocol: TCP
+        - name: http-oczpages
+          containerPort: 8888
+          protocol: TCP
+        - name: grpc
+          containerPort: 50000
+          protocol: TCP
+        livenessProbe:
+          httpGet:
+            path: /liveness
+            port: 80
+            scheme: HTTP
+          initialDelaySeconds: 10
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 5
+        readinessProbe:
+          httpGet:
+            path: /readiness
+            port: 80
+            scheme: HTTP
+          initialDelaySeconds: 10
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 5
+      # [END app_container]
       initContainers:
       - name: wait-for-db
         image: busybox
@@ -106,12 +219,12 @@ spec:
     app: mongodb
 
 ---
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: mongodb-dep
+  name: mongodb
   labels:
-    deployment: mongodb
+    app: mongodb
 spec:
   replicas: 1
   selector:
@@ -123,7 +236,7 @@ spec:
         app: mongodb
     spec:
       containers:
-      - name: mongodb 
+      - name: mongodb
         image: gcr.io/nmiu-play/mongodb:latest
         imagePullPolicy: IfNotPresent
         ports:
@@ -139,3 +252,15 @@ spec:
             cpu: 300m
             memory: 1Gi
             ephemeral-storage: 2Gi
+        livenessProbe:
+          exec:
+            command:
+              - /bin/sh
+              - -c
+              - echo 'db.runCommand("ping").ok' | mongo localhost/test --quiet
+        readinessProbe:
+          exec:
+            command:
+              - /bin/sh
+              - -c
+              - echo 'db.runCommand("ping").ok' | mongo localhost/test --quiet

@@ -32,6 +32,7 @@ import (
 	"go.opencensus.io/plugin/ochttp"
 	"go.opencensus.io/stats/view"
 	"go.opencensus.io/trace"
+	"go.opencensus.io/zpages"
 )
 
 // Index ...
@@ -74,7 +75,7 @@ func loggingMiddleware(next http.Handler) http.Handler {
 }
 
 // start server
-func runServer(router *mux.Router, httpPort string, httpsPort string, grpcPort string, tlsCert string, tlsKey string) chan error {
+func runServer(router *mux.Router, httpPort string, httpsPort string, grpcPort string, zpagesPort string, tlsCert string, tlsKey string) chan error {
 	errs := make(chan error)
 
 	// Starting HTTP server
@@ -130,6 +131,18 @@ func runServer(router *mux.Router, httpPort string, httpsPort string, grpcPort s
 		}
 	}()
 
+	go func() {
+		mux := http.NewServeMux()
+		zpages.Handle(mux, "/")
+
+		addr := ":" + zpagesPort
+		log.Printf("Staring zPages HTTP service on %s ...", zpagesPort)
+		if err := http.ListenAndServe(addr, mux); err != nil {
+			log.Fatalf("Failed to serve zPages")
+			errs <- err
+		}
+	}()
+
 	return errs
 }
 
@@ -172,8 +185,9 @@ func main() {
 	// set backend if the flag is set
 	backend := flag.String("backend", "", "Specify a backend url to ping [localhost:80] (default: none)")
 	httpPort := flag.String("http-port", "80", "Specify a http port (default: 80)")
-	httpsPort := flag.String("https-port", "443", "Specify a https port (default: 443")
+	httpsPort := flag.String("https-port", "443", "Specify a https port (default: 443)")
 	grpcPort := flag.String("grpc-port", "50000", "Specify a grpc port (default: 50000)")
+	zpagesPort := flag.String("zpages-port", "8888", "Specify a http port for zpages endpoints (default: 8888)")
 	cert := flag.String("cert", "", "Specify a TLS cert file (default: none)")
 	key := flag.String("key", "", "Specify a TLS key file (default: none)")
 	grpcBeAddr := flag.String("grpc-backend", "", "Specify a grpc backend address [localhost:50000] (default: none)")
@@ -234,7 +248,7 @@ func main() {
 	}).Methods("GET")
 	router.HandleFunc("/ping-backend-with-db", func(w http.ResponseWriter, r *http.Request) {
 		probe.PingBackend(w, r, *backend+"/db")
-		probe.PingGRPCBackend(w, r, *grpcBeAddr, *cert)
+		// probe.PingGRPCBackend(w, r, *grpcBeAddr, *cert)
 	}).Methods("GET")
 	router.HandleFunc("/ping-grpc-backend", func(w http.ResponseWriter, r *http.Request) {
 		probe.PingGRPCBackend(w, r, *grpcBeAddr, *cert)
@@ -245,7 +259,7 @@ func main() {
 	router.HandleFunc("/dump/{name}", dump.GetObj).Methods("GET")
 
 	// log.Fatal(http.ListenAndServe(":"+port, router))
-	errs := runServer(router, *httpPort, *httpsPort, *grpcPort, *cert, *key)
+	errs := runServer(router, *httpPort, *httpsPort, *grpcPort, *zpagesPort, *cert, *key)
 
 	// This will run forever until channel receives error
 	select {

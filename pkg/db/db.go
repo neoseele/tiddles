@@ -39,7 +39,7 @@ func Init(session *mgo.Session) {
 
 func getCollection() (*mgo.Collection, *mgo.Session) {
 	s := mongoSession.Copy()
-	c := s.DB("test").C("db")
+	c := s.DB("test").C("people")
 
 	return c, s
 }

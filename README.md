@@ -16,15 +16,33 @@ A ship'cat wonders around catching mices, or bugs. :)
   make build-local
   ```
 
+## Build and Deploy to GKE with `skaffold`
+
+```sh
+make build-deploy
+```
+
 ## Run the app locally
 
 ```sh
-docker run --rm -d -p 127.0.0.1:80:80 -p 127.0.0.1:443:443 --name debug tiddles:local
+make run-server
+make run-client
 ```
 
 ## Clean up
 
 ```sh
+make stop
+make clean
+```
+
+## Debug
+
+```sh
+# run
+docker run --rm -d -p 127.0.0.1:80:80 -p 127.0.0.1:443:443 --name debug tiddles:local
+
+# stop
 docker stop debug
 docker rmi tiddles:local
 ```
@@ -39,6 +57,7 @@ docker rmi tiddles:local
 * `GET /ping`
 * `GET /ping-backend`
 * `GET /ping-backend-with-db`
+* `GET /ping-grpc-backend`
 
 * `/stress`
   * `GET /stress/cpu`
