@@ -1,5 +1,5 @@
 IMAGE_NAME ?= tiddles
-IMAGE_TAG ?= local
+IMAGE_TAG ?= latest
 REPO_NAME ?= neoseele
 
 .PHONY: build
@@ -32,7 +32,7 @@ build-dockerhub: build-local # depend on build-local
 	if [ -n "$$image_id" ]; then \
 		echo "$$image_id"; \
 		docker tag $$image_id $(REPO_NAME)/$(IMAGE_NAME):$(IMAGE_TAG); \
-		docker push $(REPO_NAME)/$(IMAGE_NAME); \
+		docker push $(REPO_NAME)/$(IMAGE_NAME):$(IMAGE_TAG); \
 	fi
 
 .PHONY: run-server
