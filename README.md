@@ -54,7 +54,6 @@ docker rmi tiddles:local
 * `GET /health`
 * `GET /liveness`
 * `GET /readiness`
-* `GET /ping`
 * `GET /ping-backend`
 * `GET /ping-backend-with-db`
 * `GET /ping-grpc-backend`
